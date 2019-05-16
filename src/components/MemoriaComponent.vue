@@ -7,12 +7,12 @@
       <b-row>
         <b-col>
           <b-form-group label="Tamanho da MP:" :description="memoria.tamanho + 'GB'">
-              <b-form-input v-model="memoria.tamanho" type="number"></b-form-input>
+            <b-form-input v-model="memoria.tamanho" type="number"></b-form-input>
           </b-form-group>
         </b-col>
         <b-col>
           <b-form-group label="Tamanho do Bloco:" :description="memoria.bloco + 'B'">
-              <b-form-input v-model="memoria.bloco" type="number"></b-form-input>
+            <b-form-input v-model="memoria.bloco" type="number"></b-form-input>
           </b-form-group>
         </b-col>
       </b-row>
@@ -21,22 +21,31 @@
       <h4>Memória Cache</h4>
       <b-row>
         <b-col>
+          <b-form-group label="Tipo de Mapeamento:">
+            <b-form-select v-model="cache.tipo">
+              <option value="D" selected>Direta</option>
+              <option value="A">Associativa</option>
+            </b-form-select>
+          </b-form-group>
+        </b-col>
+        <b-col>
           <b-form-group label="Quantidade de Linhas:">
-              <b-form-input v-model="cache.linha" type="number"></b-form-input>
+            <b-form-input v-model="cache.linha" type="number"></b-form-input>
           </b-form-group>
         </b-col>
         <b-col>
           <b-form-group label="Tamanho da TAG:">
-              <b-form-input v-model="cache.tag" disabled type="number"></b-form-input>
+            <b-form-input v-model="cache.tag" disabled type="number"></b-form-input>
           </b-form-group>
         </b-col>
         <b-col>
           <b-form-group label="Tamanho da Linha:">
-              <b-form-input v-model="memoria.bloco" disabled type="number"></b-form-input>
+            <b-form-input v-model="memoria.bloco" disabled type="number"></b-form-input>
           </b-form-group>
         </b-col>
       </b-row>
-        <h5>Tamanho da Cache {{ cache.linha * (cache.tag * memoria.bloco) }}</h5>
+      <h5>Tamanho da Cache: {{ cache.linha * (cache.tag * memoria.bloco) }}</h5>
+      <br><hr><br>
     </b-container>
   </div>
 </template>
@@ -52,9 +61,10 @@ export default {
         quantidade: 0
       },
       cache: {
-          linha: 0,
-          tamanho: 0,
-          tag: 0
+        linha: 0,
+        tamanho: 0,
+        tag: 0,
+        tipo: 'D'
       }
     }
   },
