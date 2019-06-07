@@ -64,8 +64,7 @@
         <b-button style="margin-left: 1rem;" button variant="info" @click="montarSimulacao()"> Montar </b-button>
         <b-button style="margin-left: 1rem;" button variant="info" @click="iniciarSimulacao()"> Iniciar </b-button>
         <b-button style="margin-left: 59rem" variant="outline-primary" @click="start = false"> Voltar </b-button>
-      </b-row>
-      
+      </b-row>      
       <!-- <b-row>
         <b-col>
           <b-list-group>
@@ -86,15 +85,21 @@
       <b-row>
         <b-col>
           <b-list-group>
-            <b-list-group-item v-for="bloco in blocosTotais" :key="bloco">
-              {{ bloco }}
+            <b-list-group-item v-for="(value, key, bloco) in blocosTotais" :key="bloco" :class="{ redered: value.cor == '1'}">
+              {{ value.valor }}
             </b-list-group-item>
           </b-list-group>
         </b-col>
         <b-col>
           <b-list-group>
-            <b-list-group-item style="border-left: 1px solid red; border-right: 1px solid red;" v-for="(index, linha) in linhasTotais" :key="linha" :class="{ bordered: cache.n > 1 ? linha % cache.n == 0 : 1 }">
-              {{ linha }}              
+            <b-list-group-item style="border-left: 1px solid red; border-right: 1px solid red;" 
+              v-for="(value, key) of linhasTotais" :key="key" 
+              :class="{ bordered: cache.n > 1 ? key % cache.n == 0 : 1, redered: value.cor == '1', oranged: value.cor == '2' }"
+              >
+              Valor: {{ value.valor }} 
+              <span v-if="metodo == 'LRU'"> Ultima Referência: {{value.ultimaReferencia}} </span>
+              <span v-if="metodo == 'FIFO'"> Entrada: {{value.entrada}} </span>
+              <span v-if="metodo == 'LFU'"> Acessos: {{value.acessos}} </span>
             </b-list-group-item>
           </b-list-group>
         </b-col>
@@ -113,7 +118,7 @@ export default {
       memoria: {
         tamanho: 1024,
         bloco: 64,
-        quantidade: 16
+        quantidade: 64
       },
       cache: {
         n: 4,
@@ -123,25 +128,86 @@ export default {
       },
       blocosTotais: [],
       linhasTotais: [],
-      sequencia: '1,2,5,6,9',
+      sequencia: '1,1,1,1,5,14,10,15',
+      metodos: ['LRU', 'FIFO', 'LFU'],
+      metodo: 'LFU',
       start: true
     }
   },
   methods: {
+    getRandomInt: function (min, max) {
+      min = Math.ceil(min);
+      max = Math.floor(max);
+      return Math.floor(Math.random() * (max - min)) + min;
+    },
     montarSimulacao: function () {
       for (let i = 0; i < this.memoria.quantidade; i++) {
-        this.blocosTotais.push(123)
+        this.blocosTotais.push({valor: i, cor: '0'})
       }
       for (let i = 0; i < this.cache.linhas; i++) {
-        this.linhasTotais.push(0)
+        this.linhasTotais.push({valor: 0, cor: '0', acessos: this.getRandomInt(1, 15), entrada: this.getRandomInt(1, 10), ultimaReferencia: this.getRandomInt(1, 1024)})
       }
     },
     iniciarSimulacao: function () {
       let itens = this.sequencia.split(',')
-      // alert(itens)
+      let numeroConjuntos = this.cache.linhas / this.cache.n
       for (let i = 0; i < itens.length; i++) {
-        // alert(itens[i])
-        
+        this.blocosTotais[itens[i]].cor = 1
+      }
+
+      let conjunto = -1
+      for (let i = 0; i < itens.length; i++) {
+        conjunto = itens[i] % numeroConjuntos
+        let inicioConjunto = this.cache.n * conjunto
+        let fimConjunto = inicioConjunto + this.cache.n - 1
+        let comparar = true
+
+        for (let j = inicioConjunto; j < fimConjunto + 1; j++) {
+          if (j == fimConjunto && this.linhasTotais[j].valor > 0) {
+            if (this.metodo == 'LRU') {
+              let menorReferencia = 1025
+              let indiceEscolhido = -1
+              for (let k = inicioConjunto; k < fimConjunto + 1; k++) {
+                if (menorReferencia > this.linhasTotais[k].ultimaReferencia) {
+                  menorReferencia = this.linhasTotais[k].ultimaReferencia
+                  indiceEscolhido = k
+                }
+              }
+              alert('Troca pela ultima referência! Ultima referência: ' + menorReferencia)
+              this.linhasTotais[indiceEscolhido].valor = this.blocosTotais[itens[i]].valor
+              this.linhasTotais[indiceEscolhido].cor = 1
+            } else if (this.metodo == 'FIFO') {
+              let primeiro = 11
+              let indiceEscolhido = -1
+              for (let k = inicioConjunto; k < fimConjunto + 1; k++) {
+                if (primeiro > this.linhasTotais[k].entrada) {
+                  primeiro = this.linhasTotais[k].entrada
+                  indiceEscolhido = k
+                }
+              }
+              alert('Troca pelo primeiro a entrar! Quando entrou:' + primeiro)
+              this.linhasTotais[indiceEscolhido].valor = this.blocosTotais[itens[i]].valor
+              this.linhasTotais[indiceEscolhido].cor = 1
+            } else { // LFU
+              let acessos = 16
+              let indiceEscolhido = -1
+              for (let k = inicioConjunto; k < fimConjunto + 1; k++) {
+                if (acessos > this.linhasTotais[k].acessos) {
+                  acessos = this.linhasTotais[k].acessos
+                  indiceEscolhido = k
+                }
+              }
+              alert('Troca pelo menos acessado! Nº de acessos ' + acessos)
+              this.linhasTotais[indiceEscolhido].valor = this.blocosTotais[itens[i]].valor
+              this.linhasTotais[indiceEscolhido].cor = 1
+            }
+            comparar = false  
+          } else if (comparar == true && this.linhasTotais[j].valor == 0) {
+            this.linhasTotais[j].valor = this.blocosTotais[itens[i]].valor
+            this.linhasTotais[j].cor = 2
+            comparar = false
+          }
+        }
       }
     }
   },
@@ -171,6 +237,11 @@ export default {
     }
   }
 }
+
+/*
+this.linhasTotais[inicioConjunto].ultimaReferencia = this.blocosTotais[itens[i]].valor
+this.linhasTotais[inicioConjunto].cor = 1
+*/
 </script>
 
 <style>
@@ -180,5 +251,13 @@ export default {
 .bordered {
   border-top: 1px solid red !important;
 }
-
+.redered {
+  background-color: grey !important;
+}
+.oranged {
+  background-color: orangered;
+}
+.blued {
+  background-color: blue;
+}
 </style>
